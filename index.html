@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inequality & Welfare Data Explorer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .controls {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .control-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .control-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #495057;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        select, input {
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s;
+            background: white;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .multi-select {
+            min-height: 120px;
+        }
+        
+        .chart-container {
+            padding: 30px;
+            position: relative;
+            height: 500px;
+        }
+        
+        .file-upload {
+            padding: 30px;
+            text-align: center;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .file-upload input {
+            display: none;
+        }
+        
+        .file-upload label {
+            display: inline-block;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        
+        .file-upload label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .status {
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: #495057;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            padding: 20px 30px;
+            background: white;
+        }
+        
+        .stat-card {
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-card .label {
+            font-size: 0.8em;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+        
+        .stat-card .value {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Inequality & Welfare Data Explorer</h1>
+            <p>Explore inequality, welfare, and income data across 183 countries</p>
+        </div>
+        
+        <div class="file-upload">
+            <label for="fileInput">📁 Upload Your Excel File</label>
+            <input type="file" id="fileInput" accept=".xlsx,.xls">
+            <div class="status" id="status">Loading data.xlsx...</div>
+        </div>
+        
+        <div class="controls" id="controls" style="display: none;">
+            <div class="control-row">
+                <div class="control-group">
+                    <label>Countries (hold Ctrl/Cmd to select multiple)</label>
+                    <select id="countrySelect" multiple class="multi-select"></select>
+                </div>
+                
+                <div class="control-group">
+                    <label>Measure</label>
+                    <select id="measureSelect">
+                        <option value="share_income">Share Income</option>
+                        <option value="size">Size</option>
+                        <option value="gdp">GDP</option>
+                        <option value="excess_share">Excess Share</option>
+                        <option value="welfare">Welfare</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="control-row">
+                <div class="control-group">
+                    <label>Start Year</label>
+                    <input type="number" id="startYear" min="1820" max="2024" value="1980">
+                </div>
+                
+                <div class="control-group">
+                    <label>End Year</label>
+                    <input type="number" id="endYear" min="1820" max="2024" value="2024">
+                </div>
+            </div>
+        </div>
+        
+        <div class="stats" id="stats" style="display: none;"></div>
+        
+        <div class="chart-container" id="chartContainer" style="display: none;">
+            <canvas id="chart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        let data = [];
+        let chart = null;
+        
+        const measureLabels = {
+            share_income: 'Share Income',
+            size: 'Size',
+            gdp: 'GDP',
+            excess_share: 'Excess Share',
+            welfare: 'Welfare'
+        };
+        
+        const colors = [
+            '#667eea', '#764ba2', '#f093fb', '#4facfe',
+            '#43e97b', '#fa709a', '#fee140', '#30cfd0'
+        ];
+        
+        document.getElementById('fileInput').addEventListener('change', handleFile);
+        document.getElementById('countrySelect').addEventListener('change', updateChart);
+        document.getElementById('measureSelect').addEventListener('change', updateChart);
+        document.getElementById('startYear').addEventListener('input', updateChart);
+        document.getElementById('endYear').addEventListener('input', updateChart);
+        
+        // Auto-load data.xlsx from the same directory
+        loadDataFile();
+        
+        function loadDataFile() {
+            fetch('data.xlsx')
+                .then(response => {
+                    if (!response.ok) throw new Error('File not found');
+                    return response.arrayBuffer();
+                })
+                .then(arrayBuffer => {
+                    const workbook = XLSX.read(arrayBuffer, {type: 'array'});
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    data = XLSX.utils.sheet_to_json(firstSheet);
+                    
+                    document.getElementById('status').textContent = `✓ Loaded ${data.length.toLocaleString()} rows from data.xlsx`;
+                    initializeControls();
+                    updateChart();
+                })
+                .catch(error => {
+                    document.getElementById('status').textContent = '⚠ data.xlsx not found. Please upload your file manually.';
+                    console.error(error);
+                });
+        }
+        
+        function handleFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            document.getElementById('status').textContent = 'Loading...';
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const workbook = XLSX.read(e.target.result, {type: 'binary'});
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    data = XLSX.utils.sheet_to_json(firstSheet);
+                    
+                    document.getElementById('status').textContent = `✓ Loaded ${data.length.toLocaleString()} rows`;
+                    initializeControls();
+                    updateChart();
+                } catch (error) {
+                    document.getElementById('status').textContent = '✗ Error loading file';
+                    console.error(error);
+                }
+            };
+            reader.readAsBinaryString(file);
+        }
+        
+        function initializeControls() {
+            const countries = [...new Set(data.map(d => d.country))].sort();
+            const countrySelect = document.getElementById('countrySelect');
+            countrySelect.innerHTML = countries.map(c => 
+                `<option value="${c}">${c}</option>`
+            ).join('');
+            
+            // Select first 3 countries by default
+            for (let i = 0; i < Math.min(3, countries.length); i++) {
+                countrySelect.options[i].selected = true;
+            }
+            
+            // Set year range
+            const years = data.map(d => d.year).filter(y => y);
+            const minYear = Math.min(...years);
+            const maxYear = Math.max(...years);
+            document.getElementById('startYear').value = Math.max(1980, minYear);
+            document.getElementById('endYear').value = maxYear;
+            document.getElementById('startYear').min = minYear;
+            document.getElementById('startYear').max = maxYear;
+            document.getElementById('endYear').min = minYear;
+            document.getElementById('endYear').max = maxYear;
+            
+            document.getElementById('controls').style.display = 'block';
+            document.getElementById('chartContainer').style.display = 'block';
+            document.getElementById('stats').style.display = 'grid';
+        }
+        
+        function updateChart() {
+            const selectedCountries = Array.from(document.getElementById('countrySelect').selectedOptions)
+                .map(opt => opt.value);
+            const measure = document.getElementById('measureSelect').value;
+            const startYear = parseInt(document.getElementById('startYear').value);
+            const endYear = parseInt(document.getElementById('endYear').value);
+            
+            if (selectedCountries.length === 0) return;
+            
+            // Filter data
+            const filteredData = data.filter(d => 
+                selectedCountries.includes(d.country) &&
+                d.year >= startYear &&
+                d.year <= endYear &&
+                d[measure] != null
+            );
+            
+            // Prepare datasets
+            const datasets = selectedCountries.map((country, idx) => {
+                const countryData = filteredData
+                    .filter(d => d.country === country)
+                    .sort((a, b) => a.year - b.year);
+                
+                return {
+                    label: country,
+                    data: countryData.map(d => ({x: d.year, y: d[measure]})),
+                    borderColor: colors[idx % colors.length],
+                    backgroundColor: colors[idx % colors.length] + '20',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: false,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                };
+            });
+            
+            // Update stats
+            updateStats(filteredData, measure);
+            
+            // Destroy old chart
+            if (chart) chart.destroy();
+            
+            // Create new chart
+            const ctx = document.getElementById('chart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: { datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: { size: 13, weight: '600' },
+                                padding: 15,
+                                usePointStyle: true
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: `${measureLabels[measure]} Over Time`,
+                            font: { size: 18, weight: '700' },
+                            padding: 20
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            padding: 12,
+                            titleFont: { size: 14, weight: '600' },
+                            bodyFont: { size: 13 },
+                            cornerRadius: 8
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            title: {
+                                display: true,
+                                text: 'Year',
+                                font: { size: 14, weight: '600' }
+                            },
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: measureLabels[measure],
+                                font: { size: 14, weight: '600' }
+                            },
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    }
+                }
+            });
+        }
+        
+        function updateStats(filteredData, measure) {
+            const values = filteredData.map(d => d[measure]).filter(v => v != null);
+            const avg = values.reduce((a, b) => a + b, 0) / values.length;
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+            
+            document.getElementById('stats').innerHTML = `
+                <div class="stat-card">
+                    <div class="label">Data Points</div>
+                    <div class="value">${filteredData.length}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Average</div>
+                    <div class="value">${avg.toFixed(2)}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Minimum</div>
+                    <div class="value">${min.toFixed(2)}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Maximum</div>
+                    <div class="value">${max.toFixed(2)}</div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
