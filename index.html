@@ -170,14 +170,12 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 Inequality & Welfare Data Explorer</h1>
+            <h1>📊 Inequality and Social Welfare Around the Glober</h1>
             <p>These series have been constructed by Antoine Germain and François Maniquet for the paper "Top x%, income inequality, and social welfare".</p>
         </div>
         
         <div class="file-upload">
-            <label for="fileInput">📁 Upload Your Excel File</label>
-            <input type="file" id="fileInput" accept=".xlsx,.xls">
-            <div class="status" id="status">Loading data.xlsx...</div>
+            <div class="status" id="status">Loading data from data.xlsx...</div>
         </div>
         
         <div class="controls" id="controls" style="display: none;">
@@ -236,7 +234,6 @@
             '#43e97b', '#fa709a', '#fee140', '#30cfd0'
         ];
         
-        document.getElementById('fileInput').addEventListener('change', handleFile);
         document.getElementById('countrySelect').addEventListener('change', updateChart);
         document.getElementById('measureSelect').addEventListener('change', updateChart);
         document.getElementById('startYear').addEventListener('input', updateChart);
@@ -261,7 +258,7 @@
                     updateChart();
                 })
                 .catch(error => {
-                    document.getElementById('status').textContent = '⚠ data.xlsx not found. Please upload your file manually.';
+                    document.getElementById('status').textContent = '⚠ data.xlsx not found in repository. Please ensure data.xlsx is in the main branch.';
                     console.error(error);
                 });
         }
