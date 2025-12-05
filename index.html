@@ -170,7 +170,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 Inequality and Social Welfare Around the Glober</h1>
+            <h1>📊 Inequality and Social Welfare Around the Globe</h1>
             <p>These series have been constructed by Antoine Germain and François Maniquet for the paper "Top x%, income inequality, and social welfare".</p>
         </div>
         
@@ -188,10 +188,10 @@
                 <div class="control-group">
                     <label>Measure</label>
                     <select id="measureSelect">
+                        <option value="excess_share">Excess income share above average</option>
                         <option value="share_income">Income share of those above average</option>
                         <option value="size">Fraction of population above average</option>
                         <option value="gdp">Average pre-tax income</option>
-                        <option value="excess_share">Excess income share above average</option>
                         <option value="welfare">Social welfare</option>
                     </select>
                 </div>
@@ -209,8 +209,6 @@
                 </div>
             </div>
         </div>
-        
-        <div class="stats" id="stats" style="display: none;"></div>
         
         <div class="chart-container" id="chartContainer" style="display: none;">
             <canvas id="chart"></canvas>
@@ -294,10 +292,13 @@
                 `<option value="${c}">${c}</option>`
             ).join('');
             
-            // Select first 3 countries by default
-            for (let i = 0; i < Math.min(3, countries.length); i++) {
-                countrySelect.options[i].selected = true;
-            }
+            // Select France and United States by default
+            const defaultCountries = ['France', 'United States'];
+            Array.from(countrySelect.options).forEach(option => {
+                if (defaultCountries.includes(option.value)) {
+                    option.selected = true;
+                }
+            });
             
             // Set year range
             const years = data.map(d => d.year).filter(y => y);
@@ -312,7 +313,6 @@
             
             document.getElementById('controls').style.display = 'block';
             document.getElementById('chartContainer').style.display = 'block';
-            document.getElementById('stats').style.display = 'grid';
         }
         
         function updateChart() {
@@ -350,9 +350,6 @@
                     pointHoverRadius: 6
                 };
             });
-            
-            // Update stats
-            updateStats(filteredData, measure);
             
             // Destroy old chart
             if (chart) chart.destroy();
@@ -398,7 +395,12 @@
                                 text: 'Year',
                                 font: { size: 14, weight: '600' }
                             },
-                            grid: { color: 'rgba(0,0,0,0.05)' }
+                            grid: { color: 'rgba(0,0,0,0.05)' },
+                            ticks: {
+                                callback: function(value) {
+                                    return Math.round(value);
+                                }
+                            }
                         },
                         y: {
                             title: {
