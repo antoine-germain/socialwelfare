@@ -171,7 +171,7 @@
     <div class="container">
         <div class="header">
             <h1>📊 Inequality & Welfare Data Explorer</h1>
-            <p>Explore inequality, welfare, and income data across 183 countries</p>
+            <p>These series have been constructed by Antoine Germain and François Maniquet for the paper "Top x%, income inequality, and social welfare".</p>
         </div>
         
         <div class="file-upload">
@@ -190,11 +190,11 @@
                 <div class="control-group">
                     <label>Measure</label>
                     <select id="measureSelect">
-                        <option value="share_income">Share Income</option>
-                        <option value="size">Size</option>
-                        <option value="gdp">GDP</option>
-                        <option value="excess_share">Excess Share</option>
-                        <option value="welfare">Welfare</option>
+                        <option value="share_income">Income share of those above average</option>
+                        <option value="size">Fraction of population above average</option>
+                        <option value="gdp">Average pre-tax income</option>
+                        <option value="excess_share">Excess income share above average</option>
+                        <option value="welfare">Social welfare</option>
                     </select>
                 </div>
             </div>
@@ -224,11 +224,11 @@
         let chart = null;
         
         const measureLabels = {
-            share_income: 'Share Income',
-            size: 'Size',
-            gdp: 'GDP',
-            excess_share: 'Excess Share',
-            welfare: 'Welfare'
+            share_income: 'Income share of those above average',
+            size: 'Fraction of population above average',
+            gdp: 'Average pre-tax income',
+            excess_share: 'Excess income share above average',
+            welfare: 'Social welfare'
         };
         
         const colors = [
